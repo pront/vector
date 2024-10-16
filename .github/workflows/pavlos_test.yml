@@ -33,7 +33,7 @@ jobs:
 
   job2:
     runs-on: ubuntu-latest
-    if: needs.check-skip-regression.outputs.skip == 'false'
+    needs: job1
     steps:
       - name: Print message for Job 2
         run: echo "hi job 2"
