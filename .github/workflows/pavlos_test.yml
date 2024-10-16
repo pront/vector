@@ -1,12 +1,13 @@
-name: Sample Workflow
+name: Pavlos Test Workflow
 
 on:
-  pull_request:  # Triggered on pull request events
-    types: [opened, synchronize]
+  pull_request: # Triggered on pull request events
+    types: [ opened, synchronize ]
 
-env:
 #  SKIP_REGRESSION: "${{ contains(github.event.pull_request.labels.*.name, 'ci-condition: skip-regression') }}"
+env:
   SKIP_REGRESSION: 'true'
+
 jobs:
   job1:
     runs-on: ubuntu-latest
