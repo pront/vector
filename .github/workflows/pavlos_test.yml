@@ -29,12 +29,14 @@ jobs:
 
   job1:
     runs-on: ubuntu-latest
+    if: needs.check-skip-regression.outputs.skip == 'false'
     steps:
       - name: Print message for Job 1
         run: echo "hi job 1"
 
   job2:
     runs-on: ubuntu-latest
+    if: needs.check-skip-regression.outputs.skip == 'false'
     steps:
       - name: Print message for Job 2
         run: echo "hi job 2"
