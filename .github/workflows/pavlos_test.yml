@@ -1,9 +1,15 @@
 name: Pavlos Test Workflow
 
 on:
-  pull_request: # Triggered on pull request events
-    types: [ opened, synchronize ]
-
+  merge_group:
+    types: [ checks_requested ]
+  workflow_call:
+  # Don't want to run this on each PR commit, but because GH doesn't allow specifying different required checks
+  # for pull request and merge queue, we need to "run" it in pull request, but in the jobs we will just auto pass.
+  pull_request:
+  # Also, this workflow runs every Monday at 5:00 AM UTC.
+  schedule:
+    - cron: "0 5 * * 1"
 jobs:
   check-should-run:
     runs-on: ubuntu-latest
