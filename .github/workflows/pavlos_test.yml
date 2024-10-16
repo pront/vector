@@ -8,7 +8,25 @@ on:
 env:
   SKIP_REGRESSION: 'true'
 
+
 jobs:
+  check-skip-regression:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.set-skip.outputs.SKIP_REGRESSION }}
+    steps:
+      - name: Set SKIP_REGRESSION based on a label
+        id: set-skip
+        run: |
+          echo "::set-output name=SKIP_REGRESSION::true"
+          exit 0
+          
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci-condition: skip-regression') }}" == "true" ]]; then
+            echo "::set-output name=SKIP_REGRESSION::true"
+          else
+            echo "::set-output name=SKIP_REGRESSION::false"
+          fi
+
   job1:
     runs-on: ubuntu-latest
     steps:
@@ -23,10 +41,11 @@ jobs:
 
   job3:
     runs-on: ubuntu-latest
-    if: ${{ env.SKIP_REGRESSION == 'true' }}
     needs:
+      - check-skip-regression
       - job1
       - job2
+    if: needs.check-skip-regression.outputs.skip == 'false'
     steps:
       - name: Print message for Job 3
         run: echo "hi job 3, depends on both job1 and job2"
