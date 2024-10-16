@@ -4,27 +4,20 @@ on:
   pull_request: # Triggered on pull request events
     types: [ opened, synchronize ]
 
-#  SKIP_REGRESSION: "${{ contains(github.event.pull_request.labels.*.name, 'ci-condition: skip-regression') }}"
-env:
-  SKIP_REGRESSION: 'true'
-
-
 jobs:
   check-should-run:
     runs-on: ubuntu-latest
     outputs:
       should-run: ${{ steps.set-should-run.outputs.SHOULD_RUN }}
     steps:
-      - name: Determine if
+      - name: Determine if should run
         id: set-should-run
         run: |
-          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci-condition: skip-regression') }}" == "true" ]]; then
-             if [[ "${{ github.event_name == 'pull_request_review' }}" == "true" ]]; then
-                echo "SHOULD_RUN=true" >> ${GITHUB_OUTPUT}
-             else
-                echo "SHOULD_RUN=false" >> ${GITHUB_OUTPUT}
+          if [[ "${{ github.event_name }}" == "pull_request_review" || 
+                "${{ !contains(github.event.pull_request.labels.*.name, 'ci-condition: skip-regression') }}" == "true" ]]; then
+            echo "SHOULD_RUN=true" >> $GITHUB_OUTPUT
           else
-             echo "SHOULD_RUN=true" >> ${GITHUB_OUTPUT}
+            echo "SHOULD_RUN=false" >> $GITHUB_OUTPUT
           fi
 
   job1:
