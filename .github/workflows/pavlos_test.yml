@@ -1,0 +1,31 @@
+name: Sample Workflow
+
+on:
+  pull_request:  # Triggered on pull request events
+    types: [opened, synchronize]
+
+env:
+#  SKIP_REGRESSION: "${{ contains(github.event.pull_request.labels.*.name, 'ci-condition: skip-regression') }}"
+  SKIP_REGRESSION: 'true'
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print message for Job 1
+        run: echo "hi job 1"
+
+  job2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print message for Job 2
+        run: echo "hi job 2"
+
+  job3:
+    runs-on: ubuntu-latest
+    if: env.SKIP_REGRESSION == 'true'
+    needs:
+      - job1
+      - job2
+    steps:
+      - name: Print message for Job 3
+        run: echo "hi job 3, depends on both job1 and job2"
