@@ -10,8 +10,8 @@
 name: Changelog
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+#  pull_request:
+#    types: [opened, synchronize, reopened, labeled, unlabeled]
   # Due to merge queue requiring same status checks as PRs, must pass by default
   merge_group:
     types: [checks_requested]
