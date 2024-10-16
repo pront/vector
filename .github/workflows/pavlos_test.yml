@@ -18,9 +18,6 @@ jobs:
       - name: Set SKIP_REGRESSION based on a label
         id: set-skip
         run: |
-          echo "::set-output name=SKIP_REGRESSION::true"
-          exit 0
-          
           if [[ "${{ contains(github.event.pull_request.labels.*.name, 'ci-condition: skip-regression') }}" == "true" ]]; then
             echo "::set-output name=SKIP_REGRESSION::true"
           else
