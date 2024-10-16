@@ -23,7 +23,7 @@ jobs:
 
   job3:
     runs-on: ubuntu-latest
-    if: env.SKIP_REGRESSION == 'true'
+    if: ${{ env.SKIP_REGRESSION == 'true' }}
     needs:
       - job1
       - job2
