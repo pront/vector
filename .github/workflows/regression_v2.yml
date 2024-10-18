@@ -1,13 +1,13 @@
-name: "Pavlos Regression Check"
+name: "Regression Check"
 
 on:
   workflow_dispatch:
     inputs:
       baseline-sha:
-        description: "The SHA to use as the baseline (optional)"
+        description: "The SHA to use as the baseline (optional). If not provided, it defaults to the SHA from 24 hours ago."
         required: false
       comparison-sha:
-        description: "The SHA to use for comparison (optional)"
+        description: "The SHA to use for comparison (optional). If not provided, it defaults to the current HEAD of the origin/master branch."
         required: false
 
 jobs:
@@ -48,14 +48,16 @@ jobs:
           BASELINE_SHA="${{ steps.set_shas.outputs.baseline_sha }}"
           COMPARISON_SHA="${{ steps.set_shas.outputs.comparison_sha }}"
           
-          if git cat-file -e "${BASELINE_SHA}^{commit}"; then
+          # Validate baseline SHA
+          if [ -n "$BASELINE_SHA" ] && git cat-file -e "${BASELINE_SHA}^{commit}"; then
             echo "Baseline SHA is valid."
           else
             echo "Invalid baseline SHA: $BASELINE_SHA."
             exit 1
           fi
           
-          if git cat-file -e "${COMPARISON_SHA}^{commit}"; then
+          # Validate comparison SHA
+          if [ -n "$COMPARISON_SHA" ] && git cat-file -e "${COMPARISON_SHA}^{commit}"; then
             echo "Comparison SHA is valid."
           else
             echo "Invalid comparison SHA: $COMPARISON_SHA."
