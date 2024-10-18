@@ -10,16 +10,16 @@ on:
         description: "The SHA to use for comparison (optional). If not provided, it defaults to the current HEAD of the origin/master branch."
         required: false
   schedule:
-    - cron: '0 6 * * 1-5' # Runs at 6 AM UTC on weekdays (Monday to Friday)
+    - cron: '0 6 * * 1-5' # 6 AM UTC on weekdays
 
 jobs:
   resolve-shas:
     runs-on: ubuntu-latest
     outputs:
-      baseline-sha: ${{ steps.set_and_validate_shas.outputs.baseline_sha }}
-      comparison-sha: ${{ steps.set_and_validate_shas.outputs.comparison_sha }}
-      baseline-tag: ${{ steps.set_and_validate_shas.outputs.baseline_tag }}
-      comparison-tag: ${{ steps.set_and_validate_shas.outputs.comparison_tag }}
+      baseline_sha: ${{ steps.set_and_validate_shas.outputs.BASELINE_SHA }}
+      comparison_sha: ${{ steps.set_and_validate_shas.outputs.COMPARISON_SHA }}
+      baseline_tag: ${{ steps.set_and_validate_shas.outputs.BASELINE_TAG }}
+      comparison_tag: ${{ steps.set_and_validate_shas.outputs.COMPARISON_TAG }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,13 +64,14 @@ jobs:
           fi
           
           # Set tags and export them
-          BASELINE_TAG="workflow_dispatch-${COMPARISON_SHA}-${BASELINE_SHA}"
-          COMPARISON_TAG="workflow_dispatch-${COMPARISON_SHA}-${COMPARISON_SHA}"
+          BASELINE_TAG="WORKFLOW_DISPATCH-${COMPARISON_SHA}-${BASELINE_SHA}"
+          COMPARISON_TAG="WORKFLOW_DISPATCH-${COMPARISON_SHA}-${COMPARISON_SHA}"
 
-          echo "baseline_sha=${BASELINE_SHA}" >> $GITHUB_OUTPUT
-          echo "comparison_sha=${COMPARISON_SHA}" >> $GITHUB_OUTPUT
-          echo "baseline_tag=${BASELINE_TAG}" >> $GITHUB_OUTPUT
-          echo "comparison_tag=${COMPARISON_TAG}" >> $GITHUB_OUTPUT
+          echo "BASELINE_SHA=${BASELINE_SHA}" >> $GITHUB_OUTPUT
+          echo "COMPARISON_SHA=${COMPARISON_SHA}" >> $GITHUB_OUTPUT
+          
+          echo "BASELINE_TAG=${BASELINE_TAG}" >> $GITHUB_OUTPUT
+          echo "COMPARISON_TAG=${COMPARISON_TAG}" >> $GITHUB_OUTPUT
 
   display-results:
     runs-on: ubuntu-latest
@@ -78,7 +79,7 @@ jobs:
     steps:
       - name: Display Results
         run: |
-          echo "Baseline SHA: ${{ needs.resolve-shas.outputs.baseline-sha }}"
-          echo "Comparison SHA: ${{ needs.resolve-shas.outputs.comparison-sha }}"
-          echo "Baseline Tag: ${{ needs.resolve-shas.outputs.baseline-tag }}"
-          echo "Comparison Tag: ${{ needs.resolve-shas.outputs.comparison-tag }}"
+          echo "Baseline SHA: ${{ needs.resolve-shas.outputs.baseline_sha }}"
+          echo "Comparison SHA: ${{ needs.resolve-shas.outputs.comparison_sha }}"
+          echo "Baseline Tag: ${{ needs.resolve-shas.outputs.baseline_tag }}"
+          echo "Comparison Tag: ${{ needs.resolve-shas.outputs.comparison_tag }}"
