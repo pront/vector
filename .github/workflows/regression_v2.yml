@@ -1,4 +1,26 @@
-name: "Regression Check"
+# Regression Detection Suite
+#
+# This workflow runs under the following conditions:
+#   - Once per day, based on a schedule
+#   - On demand, triggered from https://github.com/vectordotdev/vector/actions/workflows/regression_v2.yml
+#
+# The workflow accepts two optional inputs:
+#   - The baseline SHA:
+#     - If not specified, the SHA from 24 hours ago on origin/master is used.
+#   - The comparison SHA:
+#     - If not specified, the current HEAD of origin/master is used.
+#
+# This workflow runs regression detection experiments, performing relative
+# evaluations of the baseline SHA and comparison SHA. The exact SHAs are determined
+# by how the workflow is triggered.
+#
+# The goal is to provide quick feedback on Vector's performance across a variety
+# of configurations, checking if throughput performance has degraded or become
+# more variable in the comparison SHA relative to the baseline SHA.
+#
+# Docker image tags are based on the resolved SHAs.
+
+name: Regression Detection Suite (new)
 
 on:
   workflow_dispatch:
@@ -10,16 +32,22 @@ on:
         description: "The SHA to use for comparison (optional). If not provided, it defaults to the current HEAD of the origin/master branch."
         required: false
   schedule:
-    - cron: '0 6 * * 1-5' # 6 AM UTC on weekdays
+    - cron: '0 6 * * 1-5' # Runs at 6 AM UTC on weekdays (Monday to Friday)
+
+env:
+  SINGLE_MACHINE_PERFORMANCE_API: ${{ secrets.SINGLE_MACHINE_PERFORMANCE_API }}
+  SMP_WARMUP_SECONDS: 70 # default is 45 seconds
 
 jobs:
-  resolve-shas:
+
+  resolve-inputs:
     runs-on: ubuntu-latest
     outputs:
-      baseline_sha: ${{ steps.set_and_validate_shas.outputs.BASELINE_SHA }}
-      comparison_sha: ${{ steps.set_and_validate_shas.outputs.COMPARISON_SHA }}
-      baseline_tag: ${{ steps.set_and_validate_shas.outputs.BASELINE_TAG }}
-      comparison_tag: ${{ steps.set_and_validate_shas.outputs.COMPARISON_TAG }}
+      baseline-sha: ${{ steps.set_and_validate_shas.outputs.BASELINE_SHA }}
+      comparison-sha: ${{ steps.set_and_validate_shas.outputs.COMPARISON_SHA }}
+      baseline-tag: ${{ steps.set_and_validate_shas.outputs.BASELINE_TAG }}
+      comparison-tag: ${{ steps.set_and_validate_shas.outputs.COMPARISON_TAG }}
+      smp-version: ${{ steps.experimental-meta.outputs.SMP_CRATE_VERSION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,7 +65,6 @@ jobs:
             BASELINE_SHA="${{ github.event.inputs.baseline-sha }}"
             echo "Using provided baseline SHA: ${BASELINE_SHA}"
           fi
-          
           # Validate baseline SHA
           if [ -n "${BASELINE_SHA}" ] && git cat-file -e "${BASELINE_SHA}^{commit}"; then
             echo "Baseline SHA is valid."
@@ -45,7 +72,6 @@ jobs:
             echo "Invalid baseline SHA: ${BASELINE_SHA}."
             exit 1
           fi
-          
           # Set comparison SHA
           if [ -z "${{ github.event.inputs.comparison-sha }}" ]; then
             COMPARISON_SHA=$(git rev-parse origin/master)
@@ -62,24 +88,28 @@ jobs:
             echo "Invalid comparison SHA: ${COMPARISON_SHA}."
             exit 1
           fi
-          
           # Set tags and export them
-          BASELINE_TAG="WORKFLOW_DISPATCH-${COMPARISON_SHA}-${BASELINE_SHA}"
-          COMPARISON_TAG="WORKFLOW_DISPATCH-${COMPARISON_SHA}-${COMPARISON_SHA}"
-
+          BASELINE_TAG="workflow_dispatch-${COMPARISON_SHA}-${BASELINE_SHA}"
+          COMPARISON_TAG="workflow_dispatch-${COMPARISON_SHA}-${COMPARISON_SHA}"
           echo "BASELINE_SHA=${BASELINE_SHA}" >> $GITHUB_OUTPUT
           echo "COMPARISON_SHA=${COMPARISON_SHA}" >> $GITHUB_OUTPUT
           
           echo "BASELINE_TAG=${BASELINE_TAG}" >> $GITHUB_OUTPUT
           echo "COMPARISON_TAG=${COMPARISON_TAG}" >> $GITHUB_OUTPUT
+      - name: Set SMP version
+        id: experimental-meta
+        run: |
+          export SMP_CRATE_VERSION="0.16.1"
+          echo "smp crate version: ${SMP_CRATE_VERSION}"
+          echo "SMP_CRATE_VERSION=${SMP_CRATE_VERSION}" >> $GITHUB_OUTPUT
 
   display-results:
     runs-on: ubuntu-latest
-    needs: resolve-shas
+    needs: resolve-inputs
     steps:
       - name: Display Results
         run: |
-          echo "Baseline SHA: ${{ needs.resolve-shas.outputs.baseline_sha }}"
-          echo "Comparison SHA: ${{ needs.resolve-shas.outputs.comparison_sha }}"
-          echo "Baseline Tag: ${{ needs.resolve-shas.outputs.baseline_tag }}"
-          echo "Comparison Tag: ${{ needs.resolve-shas.outputs.comparison_tag }}"
+          echo "Baseline SHA: ${{ needs.resolve-inputs.outputs.baseline-sha }}"
+          echo "Comparison SHA: ${{ needs.resolve-inputs.outputs.comparison-sha }}"
+          echo "Baseline Tag: ${{ needs.resolve-inputs.outputs.baseline-tag }}"
+          echo "Comparison Tag: ${{ needs.resolve-inputs.outputs.comparison-tag }}"

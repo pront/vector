@@ -34,12 +34,6 @@ on:
   schedule:
     - cron: '0 6 * * 1-5' # Runs at 6 AM UTC on weekdays (Monday to Friday)
 
-concurrency:
-  # In flight runs will be canceled only by re-trigger through the merge queue or if additional PR commits are pushed.
-  # The comment.html_url should always be unique.
-  group: ${{ github.workflow }}-${{ github.event.comment.html_url || github.ref }}
-  cancel-in-progress: true
-
 env:
   SINGLE_MACHINE_PERFORMANCE_API: ${{ secrets.SINGLE_MACHINE_PERFORMANCE_API }}
   SMP_WARMUP_SECONDS: 70 # default is 45 seconds
@@ -51,7 +45,7 @@ jobs:
     outputs:
       baseline-sha: ${{ steps.set_and_validate_shas.outputs.BASELINE_SHA }}
       comparison-sha: ${{ steps.set_and_validate_shas.outputs.COMPARISON_SHA }}
-      baseline_tag: ${{ steps.set_and_validate_shas.outputs.BASELINE_TAG }}
+      baseline-tag: ${{ steps.set_and_validate_shas.outputs.BASELINE_TAG }}
       comparison-tag: ${{ steps.set_and_validate_shas.outputs.COMPARISON_TAG }}
       smp-version: ${{ steps.experimental-meta.outputs.SMP_CRATE_VERSION }}
     steps:
@@ -71,7 +65,7 @@ jobs:
             BASELINE_SHA="${{ github.event.inputs.baseline-sha }}"
             echo "Using provided baseline SHA: ${BASELINE_SHA}"
           fi
-          
+
           # Validate baseline SHA
           if [ -n "${BASELINE_SHA}" ] && git cat-file -e "${BASELINE_SHA}^{commit}"; then
             echo "Baseline SHA is valid."
@@ -79,7 +73,7 @@ jobs:
             echo "Invalid baseline SHA: ${BASELINE_SHA}."
             exit 1
           fi
-          
+
           # Set comparison SHA
           if [ -z "${{ github.event.inputs.comparison-sha }}" ]; then
             COMPARISON_SHA=$(git rev-parse origin/master)
@@ -96,7 +90,7 @@ jobs:
             echo "Invalid comparison SHA: ${COMPARISON_SHA}."
             exit 1
           fi
-          
+
           # Set tags and export them
           BASELINE_TAG="workflow_dispatch-${COMPARISON_SHA}-${BASELINE_SHA}"
           COMPARISON_TAG="workflow_dispatch-${COMPARISON_SHA}-${COMPARISON_SHA}"
@@ -177,6 +171,11 @@ jobs:
           echo "SOURCE_CHANGED='${SOURCE_CHANGED}'"
           echo "SOURCE_CHANGED=${SOURCE_CHANGED}" >> $GITHUB_OUTPUT
 
+  should-run-gate:
+    runs-on: ubuntu-latest
+    needs: check-source-changed
+    if: ${{ needs.check-source-changed.outputs.source_changed }}
+
   ##
   ## BUILD
   ##
@@ -186,6 +185,7 @@ jobs:
     runs-on: ubuntu-20.04-4core
     timeout-minutes: 30
     needs:
+      - should-run-gate
       - resolve-inputs
     steps:
       - uses: colpal/actions-clean@v1
@@ -211,7 +211,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           outputs: type=docker,dest=${{ runner.temp }}/baseline-image.tar
           tags: |
-            vector:${{ needs.resolve-inputs.outputs.baseline_tag }}
+            vector:${{ needs.resolve-inputs.outputs.baseline-tag }}
 
       - name: Upload image as artifact
         uses: actions/upload-artifact@v3
@@ -224,6 +224,7 @@ jobs:
     runs-on: ubuntu-20.04-4core
     timeout-minutes: 30
     needs:
+      - should-run-gate
       - resolve-inputs
     steps:
       - uses: colpal/actions-clean@v1
@@ -262,6 +263,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     needs:
+      - should-run-gate
       - resolve-inputs
     steps:
       - name: Configure AWS Credentials
@@ -284,6 +286,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     needs:
+      - should-run-gate
       - resolve-inputs
       - confirm-valid-credentials
       - build-baseline
@@ -323,6 +326,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     needs:
+      - should-run-gate
       - resolve-inputs
       - confirm-valid-credentials
       - build-comparison
@@ -362,6 +366,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs:
+      - should-run-gate
       - resolve-inputs
       - upload-baseline-image-to-ecr
       - upload-comparison-image-to-ecr
@@ -491,6 +496,7 @@ jobs:
     timeout-minutes: 5
     needs:
       - submit-job
+      - should-run-gate
       - resolve-inputs
     steps:
       - uses: actions/checkout@v3
@@ -512,7 +518,7 @@ jobs:
           name: vector-submission-metadata
           path: ${{ runner.temp }}/
 
-      - name: Determine if PR introduced a regression
+      - name: Determine SMP job result
         env:
           RUST_LOG: info
         run: |
@@ -567,6 +573,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     needs:
+      - should-run-gate
       - submit-job
       - resolve-inputs
     steps:
@@ -619,13 +626,6 @@ jobs:
         uses: juliangruber/read-file-action@v1
         with:
           path: ${{ runner.temp }}/outputs/report.md
-
-      - name: Post report to PR
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          issue-number: ${{ needs.resolve-inputs.outputs.pr-number }}
-          edit-mode: append
-          body: ${{ steps.read-analysis.outputs.content }}
 
       - name: Upload regression report to artifacts
         uses: actions/upload-artifact@v3
@@ -680,6 +680,7 @@ jobs:
     timeout-minutes: 5
     if: always()
     needs:
+      - should-run-gate
       - resolve-inputs
       - build-baseline
       - build-comparison
