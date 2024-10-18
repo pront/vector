@@ -1,4 +1,4 @@
-name: "Regression Check"
+name: "Pavlos Regression Check"
 
 on:
   workflow_dispatch:
@@ -14,8 +14,6 @@ jobs:
   resolve-shas:
     runs-on: ubuntu-latest
     outputs:
-      baseline-valid: ${{ steps.validate_baseline_sha.outputs.valid }}
-      comparison-valid: ${{ steps.validate_comparison_sha.outputs.valid }}
       baseline-sha: ${{ steps.set_shas.outputs.baseline_sha }}
       comparison-sha: ${{ steps.set_shas.outputs.comparison_sha }}
     steps:
@@ -44,44 +42,26 @@ jobs:
           echo "baseline_sha=$BASELINE_SHA" >> $GITHUB_OUTPUT
           echo "comparison_sha=$COMPARISON_SHA" >> $GITHUB_OUTPUT
 
-      - name: Validate baseline-sha
-        id: validate_baseline_sha
+      - name: Validate SHAs
+        id: validate_shas
         run: |
-          if git cat-file -e "${{ steps.set_shas.outputs.baseline_sha }}^{commit}"; then
-            echo "valid=true" >> $GITHUB_OUTPUT
+          BASELINE_SHA="${{ steps.set_shas.outputs.baseline_sha }}"
+          COMPARISON_SHA="${{ steps.set_shas.outputs.comparison_sha }}"
+          
+          if git cat-file -e "${BASELINE_SHA}^{commit}"; then
             echo "Baseline SHA is valid."
           else
-            echo "valid=false" >> $GITHUB_OUTPUT
-            echo "Invalid baseline SHA: ${{ steps.set_shas.outputs.baseline_sha }}."
+            echo "Invalid baseline SHA: $BASELINE_SHA."
             exit 1
           fi
-        outputs:
-          valid: ${{ steps.validate_baseline_sha.outputs.valid }}
-
-      - name: Validate comparison-sha
-        id: validate_comparison_sha
-        run: |
-          if git cat-file -e "${{ steps.set_shas.outputs.comparison_sha }}^{commit}"; then
-            echo "valid=true" >> $GITHUB_OUTPUT
+          
+          if git cat-file -e "${COMPARISON_SHA}^{commit}"; then
             echo "Comparison SHA is valid."
           else
-            echo "valid=false" >> $GITHUB_OUTPUT
-            echo "Invalid comparison SHA: ${{ steps.set_shas.outputs.comparison_sha }}."
+            echo "Invalid comparison SHA: $COMPARISON_SHA."
             exit 1
           fi
-        outputs:
-          valid: ${{ steps.validate_comparison_sha.outputs.valid }}
-
-      - name: Stop workflow if any SHA is invalid
-        run: |
-          if [ "${{ steps.validate_baseline_sha.outputs.valid }}" != "true" ] || [ "${{ steps.validate_comparison_sha.outputs.valid }}" != "true" ]; then
-            echo "One or more SHAs are invalid. Stopping the workflow."
-            exit 1
-          fi
-
-      - name: Output valid SHAs
-        if: success()
-        run: |
+          
           echo "Both baseline-sha and comparison-sha are valid."
 
   display-results:
@@ -92,5 +72,3 @@ jobs:
         run: |
           echo "Baseline SHA: ${{ needs.resolve-shas.outputs.baseline-sha }}"
           echo "Comparison SHA: ${{ needs.resolve-shas.outputs.comparison-sha }}"
-          echo "Baseline SHA valid: ${{ needs.resolve-shas.outputs.baseline-valid }}"
-          echo "Comparison SHA valid: ${{ needs.resolve-shas.outputs.comparison-valid }}"
