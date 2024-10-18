@@ -18,7 +18,9 @@ jobs:
       comparison-sha: ${{ steps.set_shas.outputs.comparison_sha }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set SHAs
         id: set_shas
@@ -39,8 +41,8 @@ jobs:
             echo "Using provided comparison SHA: $COMPARISON_SHA"
           fi
           
-          echo "baseline_sha=$BASELINE_SHA" >> $GITHUB_OUTPUT
-          echo "comparison_sha=$COMPARISON_SHA" >> $GITHUB_OUTPUT
+          echo "baseline_sha=${BASELINE_SHA}" >> $GITHUB_OUTPUT
+          echo "comparison_sha=${COMPARISON_SHA}" >> $GITHUB_OUTPUT
 
       - name: Validate SHAs
         id: validate_shas
