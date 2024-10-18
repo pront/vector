@@ -59,8 +59,18 @@ jobs:
             exit 1
           fi
           
+          # Set tags and export them
+          BASELINE_TAG="workflow_dispatch-${COMPARISON_SHA}-${BASELINE_SHA}"
+          COMPARISON_TAG="workflow_dispatch-${COMPARISON_SHA}-${COMPARISON_SHA}"
+
           echo "baseline_sha=${BASELINE_SHA}" >> $GITHUB_OUTPUT
           echo "comparison_sha=${COMPARISON_SHA}" >> $GITHUB_OUTPUT
+          
+          echo "Baseline_tag=${BASELINE_TAG}" >> $GITHUB_OUTPUT
+          echo "Baseline tag is: ${BASELINE_TAG}"
+          
+          echo "Comparison_tag=${COMPARISON_TAG}" >> $GITHUB_OUTPUT
+          echo "Comparison tag is: ${COMPARISON_TAG}"
 
   display-results:
     runs-on: ubuntu-latest
@@ -70,3 +80,5 @@ jobs:
         run: |
           echo "Baseline SHA: ${{ needs.resolve-shas.outputs.baseline-sha }}"
           echo "Comparison SHA: ${{ needs.resolve-shas.outputs.comparison-sha }}"
+          echo "Baseline Tag: ${{ needs.resolve-shas.outputs.baseline-tag }}"
+          echo "Comparison Tag: ${{ needs.resolve-shas.outputs.comparison-tag }}"
