@@ -1,0 +1,55 @@
+name: Pavlos Test Workflow
+
+on:
+  merge_group:
+    types: [ checks_requested ]
+  workflow_call:
+  # Don't want to run this on each PR commit, but because GH doesn't allow specifying different required checks
+  # for pull request and merge queue, we need to "run" it in pull request, but in the jobs we will just auto pass.
+  pull_request:
+  # Also, this workflow runs every Monday at 5:00 AM UTC.
+  schedule:
+    - cron: "0 5 * * 1"
+jobs:
+  check-should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.set-should-run.outputs.SHOULD_RUN }}
+    steps:
+      - name: Determine if should run
+        id: set-should-run
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "SHOULD_RUN=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" != "pull_request_review" &&
+                  "${{ !contains(github.event.pull_request.labels.*.name, 'ci-condition: skip-regression') }}" == "true" ]]; then
+            echo "SHOULD_RUN=false" >> $GITHUB_OUTPUT
+          else
+            echo "SHOULD_RUN=true" >> $GITHUB_OUTPUT
+          fi
+
+
+  job1:
+    runs-on: ubuntu-latest
+    needs: check-should-run
+    if: needs.check-should-run.outputs.should-run == 'false'
+    steps:
+      - name: Print message for Job 1
+        run: echo "hi job 1"
+
+  job2:
+    runs-on: ubuntu-latest
+    needs: job1
+    steps:
+      - name: Print message for Job 2
+        run: echo "hi job 2"
+
+  job3:
+    runs-on: ubuntu-latest
+    needs:
+      - check-should-run
+      - job1
+      - job2
+    steps:
+      - name: Print message for Job 3
+        run: echo "hi job 3, depends on both job1 and job2"

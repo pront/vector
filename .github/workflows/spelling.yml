@@ -56,16 +56,16 @@ name: Check Spelling
 #     # remove `experimental_apply_changes_via_bot: 1`
 #     ... otherwise adjust the `with:` as you wish
 
-on:
-  pull_request_target:
-    branches:
-    - "**"
-    tags-ignore:
-    - "**"
-    types:
-    - 'opened'
-    - 'reopened'
-    - 'synchronize'
+#on:
+#  pull_request_target:
+#    branches:
+#    - "**"
+#    tags-ignore:
+#    - "**"
+#    types:
+#    - 'opened'
+#    - 'reopened'
+#    - 'synchronize'
 
 jobs:
   spelling:
