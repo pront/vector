@@ -3,7 +3,7 @@ crate::cli_subcommands! {
 
 These test setups are organized into a set of integrations, located in subdirectories
 `scripts/e2e`.  For each integration, there is a matrix of environments, described in the
-`matrix` setting in the `test.yaml` file contained therein."#
+`matrix` setting in the `publish_test.yml` file contained therein."#
 
     mod show,
     mod start,

@@ -10,7 +10,7 @@ use serde_yaml::Value;
 
 use crate::{app, util};
 
-const FILE_NAME: &str = "test.yaml";
+const FILE_NAME: &str = "publish_test.yml";
 
 pub const INTEGRATION_TESTS_DIR: &str = "integration";
 pub const E2E_TESTS_DIR: &str = "e2e";
