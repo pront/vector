@@ -142,7 +142,6 @@ jobs:
         run: |
           curl -o verify-install.sh https://raw.githubusercontent.com/vectordotdev/vector/${{ inputs.git_ref }}/scripts/verify-install.sh
           chmod +x ./verify-install.sh
-          ls -l verify-install.sh
           ./verify-install.sh target/artifacts/vector_0.43.0-1_amd64.deb
 
   rpm-verify:
@@ -158,6 +157,7 @@ jobs:
     strategy:
       matrix:
         container:
+
           - "quay.io/centos/centos:stream9"
           - "amazonlinux:2"
           - "amazonlinux:2023"
@@ -184,10 +184,6 @@ jobs:
           curl -sSL "https://dd-package-tools.s3.amazonaws.com/dd-pkg/${DD_PKG_VERSION}/dd-pkg_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin dd-pkg
       - name: Fix Git safe directories issue when in containers (actions/checkout#760)
         run: git config --global --add safe.directory /__w/vector/vector
-      - name: Checkout Vector
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.git_ref }}
       - name: Download staged package artifacts (x86_64-unknown-linux-gnu)
         uses: actions/download-artifact@v3
         with:
@@ -195,4 +191,6 @@ jobs:
           path: target/artifacts
       - name: Verify install of RPM package.
         run: |
-          ./scripts/verify-install.sh target/artifacts/vector-${{ env.VECTOR_VERSION }}-1.x86_64.rpm
+          curl -o verify-install.sh https://raw.githubusercontent.com/vectordotdev/vector/${{ inputs.git_ref }}/scripts/verify-install.sh
+          chmod +x ./verify-install.sh
+          ./verify-install.sh target/artifacts/vector-${{ env.VECTOR_VERSION }}-1.x86_64.rpm
