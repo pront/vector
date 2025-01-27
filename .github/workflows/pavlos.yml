@@ -1,0 +1,37 @@
+name: Pavlos Upload and Display Markdown Artifact
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create and Upload Fake Markdown File
+        run: |
+          mkdir -p capture-artifacts
+          for i in {1..100}; do echo "This is line $i" >> capture-artifacts/fake_report.md; done
+          zip -j capture-artifacts.zip capture-artifacts/fake_report.md
+        shell: bash
+
+      - name: Upload Fake Markdown Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: capture-artifacts
+          path: .
+
+      - name: Download capture-artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: capture-artifacts
+
+      - name: Display Markdown Summary
+        run: |
+          unzip capture-artifacts.zip -d results
+          REPORT_MD=results/fake_report.md
+          if [ -f ${REPORT_MD} ]; then
+            cat ${REPORT_MD} >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Did not find ${REPORT_MD} file."
+          fi
+        shell: bash
