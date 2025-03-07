@@ -71,7 +71,7 @@ updates:
         patterns:
         - "zstd*"
   - package-ecosystem: "docker"
-    directory: "/distribution/docker/"
+    directory: "/distribution/docker/debian"
     schedule:
       interval: "daily"
       time: "04:00" # UTC
