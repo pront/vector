@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/github/license/vectordotdev/vector)](https://github.com/vectordotdev/vector/blob/master/LICENSE)
+
 <p align="center">
   <strong>
     <a href="https://vector.dev/docs/setup/quickstart/">Quickstart</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
