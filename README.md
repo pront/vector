@@ -1,3 +1,4 @@
+[![CI](https://github.com/vectordotdev/vector/actions/workflows/ci.yml/badge.svg)](https://github.com/vectordotdev/vector/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/vectordotdev/vector)](https://github.com/vectordotdev/vector/blob/master/LICENSE)
 
 <p align="center">
