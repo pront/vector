@@ -11,7 +11,7 @@ RUN tar -xvf vector-0*-"$(cat /etc/apk/arch)"-unknown-linux-musl*.tar.gz --strip
 
 RUN mkdir -p /var/lib/vector
 
-# Remove the revoked emSign roots C1, C3, and G3 (CVE-2026-111943).
+# Remove distrusted emSign roots and the AAA cross-signing trust path (CVE-2026-111943).
 COPY --from=distroless /etc/ssl/certs/ca-certificates.crt /tmp/base.crt
 # hadolint ignore=DL3018
 RUN apk --no-cache add openssl \
@@ -19,12 +19,12 @@ RUN apk --no-cache add openssl \
     && awk '/BEGIN CERTIFICATE/ { if (f) close(f); f = sprintf("/tmp/ca/%04d.pem", ++n) } f { print > f }' /tmp/base.crt \
     && for f in /tmp/ca/*.pem; do \
          case "$(openssl x509 -noout -subject -in "$f")" in \
-           *"CN=emSign Root CA - C1"|*"CN=emSign ECC Root CA - C3"|*"CN=emSign ECC Root CA - G3") ;; \
+           *"CN=emSign Root CA - C1"|*"CN=emSign ECC Root CA - C3"|*"CN=emSign ECC Root CA - G3"|*"CN=AAA Certificate Services") ;; \
            *) cat "$f" ;; \
          esac; \
        done > /ca-certificates.crt \
     && openssl storeutl -noout -text -certs /ca-certificates.crt > /tmp/ca.txt \
-    && ! grep -E 'Subject:.*CN=emSign (Root CA - C1|ECC Root CA - C3|ECC Root CA - G3)$' /tmp/ca.txt \
+    && ! grep -E 'Subject:.*CN=(emSign (Root CA - C1|ECC Root CA - C3|ECC Root CA - G3)|AAA Certificate Services)$' /tmp/ca.txt \
     && rm -r /tmp/ca /tmp/ca.txt /tmp/base.crt
 
 FROM distroless
